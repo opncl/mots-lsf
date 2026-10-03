@@ -109,9 +109,13 @@ function renderLevelMenu() {
             setSelection(next);
         });
     }
-    $('levelButtonText').textContent = all
+    const summary = all
         ? 'Tous les niveaux'
         : levels.filter(l => selectedIds.includes(l.id)).map(l => l.nom).join(', ');
+    // Texte court dans le bouton (petits écrans), texte complet pour l'info-bulle et les lecteurs d'écran
+    $('levelButtonText').textContent = all ? 'Tous' : summary;
+    $('levelButton').title = 'Niveaux : ' + summary;
+    $('levelButton').setAttribute('aria-label', 'Choisir les niveaux (actuellement : ' + summary + ')');
 }
 
 async function setSelection(ids) {
