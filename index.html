@@ -8,73 +8,176 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
     <script>
-        let words = [];
-        let recentWords = []; // Tableau pour garder en mémoire les derniers mots affichés
-        const MAX_RECENT = 50;
         const ELIX_BASE_URL = 'https://dico.elix-lsf.fr/dictionnaire/';
+        const MAX_RECENT = 50;
+        const STORAGE_KEY = 'mots-lsf.niveaux';
 
-        // Fonction pour charger les mots depuis le fichier texte
-        async function loadWords() {
-            try {
-                const response = await fetch('mots-a1-1.txt');
-                if (!response.ok) {
-                    throw new Error('Erreur lors du chargement du fichier');
-                }
+        let levels = [];              // Niveaux disponibles (depuis niveaux.json)
+        let selectedIds = [];         // Niveaux cochés
+        const levelCache = {};        // id du niveau -> liste de mots (évite de recharger)
+        let words = [];               // Mots disponibles : [{ mot, niveaux: ['A1.1', ...] }]
+        let recentWords = [];         // Derniers mots affichés (pour éviter les répétitions)
+
+        // --- Chargement des données -------------------------------------------------
+
+        async function loadLevels() {
+            const response = await fetch('niveaux.json');
+            if (!response.ok) throw new Error('Impossible de charger niveaux.json');
+            levels = await response.json();
+        }
+
+        async function loadLevelWords(level) {
+            if (!levelCache[level.id]) {
+                const response = await fetch(level.fichier);
+                if (!response.ok) throw new Error(`Impossible de charger ${level.fichier}`);
                 const text = await response.text();
-                words = text.split('\n').map(word => word.trim()).filter(word => word.length > 0); // On découpe par ligne et nettoie
-            } catch (error) {
-                console.error("Erreur lors du chargement des mots :", error);
+                levelCache[level.id] = text.split('\n').map(w => w.trim()).filter(w => w.length > 0);
             }
+            return levelCache[level.id];
         }
 
-        // Fonction pour afficher un mot aléatoire et le rendre cliquable sans style de lien
-        function getRandomWord() {
-            try {
-                if (words.length > 0) {
-                    // On ne peut pas exclure plus de mots qu'il n'en existe (évite une boucle infinie)
-                    const maxRecent = Math.min(MAX_RECENT, words.length - 1);
-                    let randomWord;
-                    do {
-                        randomWord = words[Math.floor(Math.random() * words.length)];
-                    } while (recentWords.includes(randomWord)); // On s'assure que le mot n'a pas été choisi récemment
-
-                    // Ajouter le mot au tableau recentWords
-                    recentWords.push(randomWord);
-                    while (recentWords.length > maxRecent) {
-                        recentWords.shift(); // Supprimer les mots les plus anciens
-                    }
-
-                    // Afficher le mot (textContent : pas d'interprétation HTML)
-                    document.getElementById('wordDisplay').textContent = randomWord;
-
-                    // Simple lien vers la page du mot sur Le Dico Elix (mots composés encodés dans l'URL)
-                    const elixLink = document.getElementById('elixLink');
-                    elixLink.href = ELIX_BASE_URL + encodeURIComponent(randomWord);
-                    elixLink.setAttribute('aria-label', `Voir « ${randomWord} » sur Le Dico Elix (nouvel onglet)`);
-                } else {
-                    document.getElementById('wordDisplay').innerText = "Aucun mot trouvé.";
+        // Fusionne les mots des niveaux cochés, sans doublons (un mot présent dans
+        // plusieurs niveaux garde la liste de ses niveaux pour le badge)
+        async function buildWordList() {
+            const chosen = levels.filter(l => selectedIds.includes(l.id));
+            const lists = await Promise.all(chosen.map(loadLevelWords));
+            const byKey = new Map();
+            chosen.forEach((level, i) => {
+                for (const mot of lists[i]) {
+                    const key = mot.toLocaleLowerCase('fr');
+                    if (!byKey.has(key)) byKey.set(key, { mot, niveaux: [] });
+                    const entry = byKey.get(key);
+                    if (!entry.niveaux.includes(level.nom)) entry.niveaux.push(level.nom);
                 }
+            });
+            words = [...byKey.values()];
+            recentWords = [];
+        }
+
+        // --- Choix des niveaux (URL > navigateur > tous) ---------------------------
+
+        function initialSelection() {
+            const validIds = levels.map(l => l.id);
+            const clean = ids => ids.filter(id => validIds.includes(id));
+            const param = new URLSearchParams(location.search).get('niveaux');
+            if (param) {
+                if (param === 'tous') return validIds;
+                const ids = clean(param.split(','));
+                if (ids.length) return ids;
+            }
+            try {
+                const saved = clean(JSON.parse(localStorage.getItem(STORAGE_KEY)) || []);
+                if (saved.length) return saved;
+            } catch (e) { /* valeur invalide : on ignore */ }
+            return validIds;
+        }
+
+        function saveSelection() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedIds)); } catch (e) { /* navigation privée */ }
+            const url = new URL(location.href);
+            const all = selectedIds.length === levels.length;
+            url.searchParams.set('niveaux', all ? 'tous' : selectedIds.join(','));
+            history.replaceState(null, '', url);
+        }
+
+        function renderLevelMenu() {
+            const menu = document.getElementById('levelMenu');
+            menu.innerHTML = '';
+            const addCheckbox = (id, label, checked, onChange, bold) => {
+                const div = document.createElement('div');
+                div.className = 'custom-control custom-checkbox';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.className = 'custom-control-input';
+                input.id = 'niveau-' + id;
+                input.checked = checked;
+                input.addEventListener('change', onChange);
+                const lbl = document.createElement('label');
+                lbl.className = 'custom-control-label' + (bold ? ' font-weight-bold' : '');
+                lbl.htmlFor = input.id;
+                lbl.textContent = label;
+                div.append(input, lbl);
+                menu.appendChild(div);
+            };
+            const all = selectedIds.length === levels.length;
+            addCheckbox('tous', 'Tous les niveaux', all, e => {
+                // Décocher « Tous » revient au premier niveau seul (il faut au moins un niveau)
+                setSelection(e.target.checked ? levels.map(l => l.id) : [levels[0].id]);
+            }, true);
+            menu.appendChild(Object.assign(document.createElement('div'), { className: 'dropdown-divider' }));
+            for (const level of levels) {
+                addCheckbox(level.id, level.nom, selectedIds.includes(level.id), e => {
+                    const next = e.target.checked
+                        ? levels.map(l => l.id).filter(id => id === level.id || selectedIds.includes(id))
+                        : selectedIds.filter(id => id !== level.id);
+                    if (next.length === 0) { e.target.checked = true; return; } // au moins un niveau
+                    setSelection(next);
+                });
+            }
+            document.getElementById('levelButton').textContent = all
+                ? 'Niveaux : tous'
+                : 'Niveaux : ' + levels.filter(l => selectedIds.includes(l.id)).map(l => l.nom).join(', ');
+        }
+
+        async function setSelection(ids) {
+            selectedIds = ids;
+            saveSelection();
+            renderLevelMenu();
+            try {
+                await buildWordList();
+                getRandomWord();
             } catch (error) {
-                console.error("Erreur lors du chargement des mots :", error);
-                document.getElementById('wordDisplay').innerText = "Erreur de chargement.";
+                console.error(error);
+                showMessage('Erreur de chargement.');
             }
         }
 
-        // Ajouter un gestionnaire d'événements pour les touches
+        // --- Affichage d'un mot ------------------------------------------------------
+
+        function showMessage(text) {
+            document.getElementById('wordDisplay').textContent = text;
+            document.getElementById('levelBadge').textContent = '';
+        }
+
+        function getRandomWord() {
+            if (words.length === 0) { showMessage('Aucun mot trouvé.'); return; }
+            // On ne peut pas exclure plus de mots qu'il n'en existe (évite une boucle infinie)
+            const maxRecent = Math.min(MAX_RECENT, words.length - 1);
+            let entry;
+            do {
+                entry = words[Math.floor(Math.random() * words.length)];
+            } while (recentWords.includes(entry.mot));
+            recentWords.push(entry.mot);
+            while (recentWords.length > maxRecent) recentWords.shift();
+
+            document.getElementById('wordDisplay').textContent = entry.mot;
+            document.getElementById('levelBadge').textContent = entry.niveaux.join(' · ');
+
+            // Simple lien vers la page du mot sur Le Dico Elix (mots composés encodés dans l'URL)
+            const elixLink = document.getElementById('elixLink');
+            elixLink.href = ELIX_BASE_URL + encodeURIComponent(entry.mot);
+            elixLink.setAttribute('aria-label', `Voir « ${entry.mot} » sur Le Dico Elix (nouvel onglet)`);
+        }
+
+        // Espace ou Entrée = nouveau mot (sauf si un bouton, lien ou case a le focus)
         document.addEventListener('keydown', function(event) {
-            // Vérifier si la touche pressée est "Espace" ou "Entrée"
-            // (sauf si un bouton ou lien a le focus : il gère déjà la touche lui-même)
             const tag = event.target.tagName;
-            if ((event.key === ' ' || event.key === 'Enter') && tag !== 'BUTTON' && tag !== 'A') {
+            if ((event.key === ' ' || event.key === 'Enter') && !['BUTTON', 'A', 'INPUT', 'LABEL'].includes(tag)) {
                 event.preventDefault();
                 getRandomWord();
             }
         });
 
-        // Charger les mots et afficher un mot aléatoire dès le début
-        document.addEventListener("DOMContentLoaded", async () => {
-            await loadWords();
-            getRandomWord();
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Cliquer dans le menu des niveaux ne doit pas le refermer
+            document.getElementById('levelMenu').addEventListener('click', e => e.stopPropagation());
+            try {
+                await loadLevels();
+                await setSelection(initialSelection());
+            } catch (error) {
+                console.error('Erreur lors du chargement des mots :', error);
+                showMessage('Erreur de chargement.');
+            }
         });
     </script>
 </head>
@@ -87,6 +190,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" id="levelButton" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Niveaux</a>
+                    <div class="dropdown-menu dropdown-menu-right px-3 py-2" id="levelMenu" aria-labelledby="levelButton" style="min-width: 12rem;"></div>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link text-white font-weight-bold" href="index.html">Page principale</a>
                 </li>
@@ -98,7 +205,8 @@
     </nav>
 
     <div class="text-center">
-        <p id="wordDisplay" class="display-3" aria-live="polite">Chargement...</p>
+        <p id="wordDisplay" class="display-3 mb-1" aria-live="polite">Chargement...</p>
+        <span id="levelBadge" class="badge badge-pill badge-secondary"></span>
         <div class="d-flex justify-content-center mt-4">
             <button type="button" onclick="getRandomWord()" class="btn btn-primary btn-lg mr-2">Nouveau mot</button>
             <a id="elixLink" href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer" class="btn btn-warning btn-lg">Voir sur Le Dico Elix ↗</a>
