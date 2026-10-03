@@ -1,0 +1,240 @@
+Matin
+Réveil
+Chambre
+Salle de bain
+Cuisine
+Dormir
+Manger
+Boire
+Se doucher
+Se laver
+Pardon
+Oui
+Non
+Midi
+Après-midi
+Soir
+Journée
+Nuit
+Travail
+Signer
+Parler
+Faim
+Fatigué
+Apprendre
+Réfléchir
+Jouer
+Jouer ensemble
+Où
+Quand
+Fait quoi
+Quoi
+Salon
+WC
+Avant
+Autrefois
+Maintenant
+Présent
+Après
+Plus tard
+Hier
+Aujour d'hui
+Demain
+Fini
+Va va va
+Semaine
+Week-end
+Jour
+Tous les jours
+Lundi
+Mardi
+Mercredi
+Jeudi
+Vendredi
+Samedi
+Dimanche
+Vacances
+Noël
+Réveillon
+Sapin
+Cadeau
+Champagne
+Fête
+Acheter
+Chocolat
+Bonne fête
+Joyeux Noël
+Bonneannée
+Comprendre
+Ne pas comprendre
+Répéter
+Regarder
+Acheter
+Qui
+Maman
+Papa
+Frère
+Sœur
+Homme
+Femme
+Garçon
+Fille
+Fils
+Bébé
+Mon
+Ton
+Son
+Notre
+Votre
+Leurs
+Beau-père
+Belle-sœur
+Demi-frère
+Amis
+Maris
+Compagnon
+Collègue
+Chef
+Grand
+Petit
+Gros
+Maigre
+Long
+Cours
+Fin
+Épais
+Bouclé
+Jeune
+Normal
+Moche
+Avoir
+Bleu
+Rouge
+Jaune
+Marron
+Noir
+Gris
+Blond
+Rouge
+Doré
+Vert
+Rouge
+Orange
+Beige
+Blanc
+Rose
+Violet
+Gris
+Claire
+Foncé
+S'habiller
+Se déshabiller
+T-shirt
+Pantalon
+Ceinture
+Bottes
+Short
+Robe
+Jupe
+Chemise
+Casquette
+Cravate
+Chaussettes
+Chaussures
+Bottes
+Manteau
+Écharpe
+Gants
+Bonnet
+D'accord
+Long
+Court
+Fin
+Épais
+Bouclé
+Flasque
+Un
+Deux
+Trois
+Quatre
+Cinq
+Six
+Sept
+Huit
+Neuf
+Dix
+Onze
+Douze
+Treize
+Quatorze
+Quinze
+Seize
+Dix-sept
+Dix-huit
+Dix-neuf
+Vingt
+Vingt et un
+Trente
+Trente-deux
+Quarante
+Quarante-trois
+Cinquante
+Cinquante-quatre
+Soixante
+Soixante-cinq
+Soixante-dix
+Soixante-seize
+Quatre-vingts
+Quatre-vingt-sept
+Quatre-vingt-dix
+Quatre-vingt-dix-huit
+Cent
+Cent cinq
+Cent douze
+Mille
+Cent dix
+Mille cent quarante-cinq
+être d’accord
+ne pas être d’accord
+fini
+pas fini
+savoir
+ne pas savoir
+connaître
+ne pas connaître
+pouvoir
+ne pas pouvoir
+être là
+ne pas être là
+vouloir
+ne pas vouloir
+aimer
+ne pas aimer
+croire
+ne pas croire
+Comprendre
+Regarder
+Dormir
+Manger
+Boire
+Se doucher
+Se laver
+Travailler
+Signer
+Parler
+Je suis fatigué
+Apprendre
+Réfléchir
+Jouer
+Acheter
+s'habiller
+se déshabiller
+fêter
+J'aime
+Je n'aime pas
+J'apprécie
+Je déteste
+J'adore
+J'ai horreur
+J'admire
+Bouche bée

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mots LSF</title>
+    <!-- Lien vers le CDN Bootstrap -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <script>
+        let words = [];
+        let recentWords = []; // Tableau pour garder en mémoire les 50 derniers mots
+
+        // Fonction pour charger les mots depuis le fichier texte
+        async function loadWords() {
+            try {
+                const response = await fetch('mots-a1-1.txt');
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement du fichier');
+                }
+                const text = await response.text();
+                words = text.split('\n').map(word => word.trim()).filter(word => word.length > 0); // On découpe par ligne et nettoie
+            } catch (error) {
+                console.error("Erreur lors du chargement des mots :", error);
+            }
+        }
+
+        // Fonction pour afficher un mot aléatoire et le rendre cliquable sans style de lien
+        function getRandomWord() {
+            try {
+                if (words.length > 0) {
+                    let randomWord;
+                    do {
+                        randomWord = words[Math.floor(Math.random() * words.length)];
+                    } while (recentWords.includes(randomWord)); // On s'assure que le mot n'a pas été choisi récemment
+                    
+                    // Ajouter le mot au tableau recentWords
+                    recentWords.push(randomWord);
+                    if (recentWords.length > 50) {
+                        recentWords.shift(); // Supprimer le mot le plus ancien si on dépasse 50 mots
+                    }
+
+                    const wordElement = document.getElementById('wordDisplay');
+                    const url = `https://dico.elix-lsf.fr/dictionnaire/${randomWord}`;
+                    
+                    // Afficher le mot sans couleur spécifique et ajouter un bouton "Rechercher sur Elix"
+                    wordElement.innerHTML = `${randomWord}`;
+                    
+                    // Ajouter les boutons côte à côte
+                    const buttonContainer = document.getElementById('buttonContainer');
+                    buttonContainer.innerHTML = `
+                        <div class="d-flex justify-content-center mt-4">
+                            <button onclick="getRandomWord()" class="btn btn-primary btn-lg mr-2">Nouveau mot</button>
+                            <button onclick="window.open('${url}', '_blank')" class="btn btn-warning btn-lg">Rechercher sur Elix</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('wordDisplay').innerText = "Aucun mot trouvé.";
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des mots :", error);
+                document.getElementById('wordDisplay').innerText = "Erreur de chargement.";
+            }
+        }
+
+        // Ajouter un gestionnaire d'événements pour les touches
+        document.addEventListener('keydown', function(event) {
+            // Vérifier si la touche pressée est "Espace" ou "Entrée"
+            if (event.key === ' ' || event.key === 'Enter') {
+                getRandomWord();
+            }
+        });
+
+        // Charger les mots et afficher un mot aléatoire dès le début
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadWords();
+            getRandomWord();
+        });
+    </script>
+</head>
+<body class="bg-light text-dark d-flex justify-content-center align-items-center" style="height: 100vh; padding-top: 70px;">
+    <!-- Menu simple fixé en haut -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-primary fixed-top">
+        <a class="navbar-brand text-white" href="#">Mot LSF</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-white font-weight-bold" href="index.html">Page principale</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="mentions-legales.html">Mentions légales</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="text-center">
+        <p id="wordDisplay" class="display-3">Chargement...</p>
+        <div id="buttonContainer"></div>
+    </div>
+
+    <!-- Script Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
