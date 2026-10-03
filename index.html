@@ -9,7 +9,9 @@
 
     <script>
         let words = [];
-        let recentWords = []; // Tableau pour garder en mémoire les 50 derniers mots
+        let recentWords = []; // Tableau pour garder en mémoire les derniers mots affichés
+        const MAX_RECENT = 50;
+        const ELIX_BASE_URL = 'https://dico.elix-lsf.fr/dictionnaire/';
 
         // Fonction pour charger les mots depuis le fichier texte
         async function loadWords() {
@@ -29,31 +31,26 @@
         function getRandomWord() {
             try {
                 if (words.length > 0) {
+                    // On ne peut pas exclure plus de mots qu'il n'en existe (évite une boucle infinie)
+                    const maxRecent = Math.min(MAX_RECENT, words.length - 1);
                     let randomWord;
                     do {
                         randomWord = words[Math.floor(Math.random() * words.length)];
                     } while (recentWords.includes(randomWord)); // On s'assure que le mot n'a pas été choisi récemment
-                    
+
                     // Ajouter le mot au tableau recentWords
                     recentWords.push(randomWord);
-                    if (recentWords.length > 50) {
-                        recentWords.shift(); // Supprimer le mot le plus ancien si on dépasse 50 mots
+                    while (recentWords.length > maxRecent) {
+                        recentWords.shift(); // Supprimer les mots les plus anciens
                     }
 
-                    const wordElement = document.getElementById('wordDisplay');
-                    const url = `https://dico.elix-lsf.fr/dictionnaire/${randomWord}`;
-                    
-                    // Afficher le mot sans couleur spécifique et ajouter un bouton "Rechercher sur Elix"
-                    wordElement.innerHTML = `${randomWord}`;
-                    
-                    // Ajouter les boutons côte à côte
-                    const buttonContainer = document.getElementById('buttonContainer');
-                    buttonContainer.innerHTML = `
-                        <div class="d-flex justify-content-center mt-4">
-                            <button onclick="getRandomWord()" class="btn btn-primary btn-lg mr-2">Nouveau mot</button>
-                            <button onclick="window.open('${url}', '_blank')" class="btn btn-warning btn-lg">Rechercher sur Elix</button>
-                        </div>
-                    `;
+                    // Afficher le mot (textContent : pas d'interprétation HTML)
+                    document.getElementById('wordDisplay').textContent = randomWord;
+
+                    // Simple lien vers la page du mot sur Le Dico Elix (mots composés encodés dans l'URL)
+                    const elixLink = document.getElementById('elixLink');
+                    elixLink.href = ELIX_BASE_URL + encodeURIComponent(randomWord);
+                    elixLink.setAttribute('aria-label', `Voir « ${randomWord} » sur Le Dico Elix (nouvel onglet)`);
                 } else {
                     document.getElementById('wordDisplay').innerText = "Aucun mot trouvé.";
                 }
@@ -66,7 +63,10 @@
         // Ajouter un gestionnaire d'événements pour les touches
         document.addEventListener('keydown', function(event) {
             // Vérifier si la touche pressée est "Espace" ou "Entrée"
-            if (event.key === ' ' || event.key === 'Enter') {
+            // (sauf si un bouton ou lien a le focus : il gère déjà la touche lui-même)
+            const tag = event.target.tagName;
+            if ((event.key === ' ' || event.key === 'Enter') && tag !== 'BUTTON' && tag !== 'A') {
+                event.preventDefault();
                 getRandomWord();
             }
         });
@@ -98,9 +98,18 @@
     </nav>
 
     <div class="text-center">
-        <p id="wordDisplay" class="display-3">Chargement...</p>
-        <div id="buttonContainer"></div>
+        <p id="wordDisplay" class="display-3" aria-live="polite">Chargement...</p>
+        <div class="d-flex justify-content-center mt-4">
+            <button type="button" onclick="getRandomWord()" class="btn btn-primary btn-lg mr-2">Nouveau mot</button>
+            <a id="elixLink" href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer" class="btn btn-warning btn-lg">Voir sur Le Dico Elix ↗</a>
+        </div>
     </div>
+
+    <footer class="fixed-bottom text-center small text-muted py-2 bg-light">
+        Les signes s'ouvrent sur <a href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Le Dico Elix</a>,
+        dictionnaire en LSF édité par l'association <a href="https://www.signesdesens.org/" target="_blank" rel="noopener noreferrer">Signes de Sens</a>.
+        Site indépendant, non affilié à Elix. · <a href="mentions-legales.html">Mentions légales</a>
+    </footer>
 
     <!-- Script Bootstrap -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
