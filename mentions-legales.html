@@ -2,42 +2,30 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#2f5bea" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#14161c" media="(prefers-color-scheme: dark)">
     <title>Mentions légales – Mots LSF</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤟</text></svg>">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light text-dark">
-    <!-- Menu simple -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-primary fixed-top">
-        <a class="navbar-brand text-white" href="#">Mot LSF</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="index.html">Page principale</a>
-                </li>
-                <!-- Active sur la page Mentions légales -->
-                <li class="nav-item ">
-                    <a class="nav-link text-white font-weight-bold" href="mentions-legales.html">Mentions légales</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-    
+<body>
+    <header class="topbar">
+        <a class="brand" href="./"><span aria-hidden="true">🤟</span> Mots LSF</a>
+        <a class="back-link" href="./">← Retour aux mots</a>
+    </header>
 
-    <div class="container mt-5 pt-5 mb-5">
-        <h1 class="text-center mb-4">Mentions légales</h1>
+    <main class="page">
+        <h1>Mentions légales</h1>
 
-        <h3>Éditeur du site</h3>
+        <h2>Éditeur du site</h2>
         <p>
             Le site <strong>Mots LSF</strong> est un projet personnel et non commercial d'entraînement à la Langue des Signes Française (LSF).<br>
             Éditeur et responsable de la publication : <strong>opncl</strong><br>
             Contact : via <a href="https://github.com/opncl/mots-lsf/issues" target="_blank" rel="noopener noreferrer">les issues du dépôt GitHub</a>
         </p>
 
-        <h3>Hébergement</h3>
+        <h2>Hébergement</h2>
         <p>
             Ce site est hébergé par <strong>Cloudflare, Inc.</strong> (Cloudflare Workers),
             101 Townsend St, San Francisco, CA 94107, États-Unis —
@@ -46,15 +34,15 @@
             Le code source est disponible sur <a href="https://github.com/opncl/mots-lsf" target="_blank" rel="noopener noreferrer">GitHub</a>.
         </p>
 
-        <h3>Conditions d'utilisation</h3>
+        <h2>Conditions d'utilisation</h2>
         <p>
             L'utilisation du site <strong>Mots LSF</strong> est gratuite et implique l'acceptation des présentes mentions.
             Le site est fourni « en l'état », à titre purement pédagogique.
         </p>
 
-        <h3>Liens vers Le Dico Elix</h3>
+        <h2>Liens vers Le Dico Elix</h2>
         <p>
-            Le bouton « Voir sur Le Dico Elix » ouvre, dans un nouvel onglet, la page correspondant au mot affiché sur
+            Le bouton « Voir le signe sur Elix » ouvre, dans un nouvel onglet, la page correspondant au mot affiché sur
             <a href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Le Dico Elix</a>,
             dictionnaire bilingue français / LSF édité par l'association
             <a href="https://www.signesdesens.org/" target="_blank" rel="noopener noreferrer">Signes de Sens</a> (Lille).
@@ -75,27 +63,22 @@
             <a href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">les soutenir</a>.
         </p>
 
-        <h3>Données personnelles et cookies</h3>
+        <h2>Données personnelles et cookies</h2>
         <p>
             Ce site ne crée aucun compte, ne dépose aucun cookie et ne collecte aucune donnée personnelle.
-            Les bibliothèques Bootstrap et jQuery sont chargées depuis des CDN tiers (StackPath, jsDelivr, jQuery), qui peuvent recevoir votre adresse IP
-            lors du chargement de la page. L'hébergeur Cloudflare peut également conserver des journaux techniques (adresse IP, par exemple).
+            Seul le choix des niveaux est mémorisé localement dans votre navigateur (stockage local), sans jamais être transmis.
+            Le site ne charge aucune ressource externe ; l'hébergeur Cloudflare peut toutefois conserver des journaux techniques (adresse IP, par exemple).
         </p>
 
-        <h3>Propriété intellectuelle</h3>
+        <h2>Propriété intellectuelle</h2>
         <p>
             La mise en page, le code et la liste de mots de ce site appartiennent à leur auteur, sauf mention contraire.
-            Ce site utilise le framework <a href="https://getbootstrap.com/" target="_blank" rel="noopener noreferrer">Bootstrap</a>,
-            projet open source sous <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">licence MIT</a>.
         </p>
 
-        <h3>Modification des mentions légales</h3>
+        <h2>Modification des mentions légales</h2>
         <p>
             Ces mentions peuvent être modifiées à tout moment. Dernière mise à jour : 3 octobre 2026.
         </p>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
 </body>
 </html>

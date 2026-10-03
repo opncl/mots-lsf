@@ -2,225 +2,58 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mots LSF</title>
-    <!-- Lien vers le CDN Bootstrap -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-
-    <script>
-        const ELIX_BASE_URL = 'https://dico.elix-lsf.fr/dictionnaire/';
-        const MAX_RECENT = 50;
-        const STORAGE_KEY = 'mots-lsf.niveaux';
-
-        let levels = [];              // Niveaux disponibles (depuis niveaux.json)
-        let selectedIds = [];         // Niveaux cochés
-        const levelCache = {};        // id du niveau -> liste de mots (évite de recharger)
-        let words = [];               // Mots disponibles : [{ mot, niveaux: ['A1.1', ...] }]
-        let recentWords = [];         // Derniers mots affichés (pour éviter les répétitions)
-
-        // --- Chargement des données -------------------------------------------------
-
-        async function loadLevels() {
-            const response = await fetch('niveaux.json');
-            if (!response.ok) throw new Error('Impossible de charger niveaux.json');
-            levels = await response.json();
-        }
-
-        async function loadLevelWords(level) {
-            if (!levelCache[level.id]) {
-                const response = await fetch(level.fichier);
-                if (!response.ok) throw new Error(`Impossible de charger ${level.fichier}`);
-                const text = await response.text();
-                levelCache[level.id] = text.split('\n').map(w => w.trim()).filter(w => w.length > 0);
-            }
-            return levelCache[level.id];
-        }
-
-        // Fusionne les mots des niveaux cochés, sans doublons (un mot présent dans
-        // plusieurs niveaux garde la liste de ses niveaux pour le badge)
-        async function buildWordList() {
-            const chosen = levels.filter(l => selectedIds.includes(l.id));
-            const lists = await Promise.all(chosen.map(loadLevelWords));
-            const byKey = new Map();
-            chosen.forEach((level, i) => {
-                for (const mot of lists[i]) {
-                    const key = mot.toLocaleLowerCase('fr');
-                    if (!byKey.has(key)) byKey.set(key, { mot, niveaux: [] });
-                    const entry = byKey.get(key);
-                    if (!entry.niveaux.includes(level.nom)) entry.niveaux.push(level.nom);
-                }
-            });
-            words = [...byKey.values()];
-            recentWords = [];
-        }
-
-        // --- Choix des niveaux (URL > navigateur > tous) ---------------------------
-
-        function initialSelection() {
-            const validIds = levels.map(l => l.id);
-            const clean = ids => ids.filter(id => validIds.includes(id));
-            const param = new URLSearchParams(location.search).get('niveaux');
-            if (param) {
-                if (param === 'tous') return validIds;
-                const ids = clean(param.split(','));
-                if (ids.length) return ids;
-            }
-            try {
-                const saved = clean(JSON.parse(localStorage.getItem(STORAGE_KEY)) || []);
-                if (saved.length) return saved;
-            } catch (e) { /* valeur invalide : on ignore */ }
-            return validIds;
-        }
-
-        function saveSelection() {
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedIds)); } catch (e) { /* navigation privée */ }
-            const url = new URL(location.href);
-            const all = selectedIds.length === levels.length;
-            url.searchParams.set('niveaux', all ? 'tous' : selectedIds.join(','));
-            history.replaceState(null, '', url);
-        }
-
-        function renderLevelMenu() {
-            const menu = document.getElementById('levelMenu');
-            menu.innerHTML = '';
-            const addCheckbox = (id, label, checked, onChange, bold) => {
-                const div = document.createElement('div');
-                div.className = 'custom-control custom-checkbox';
-                const input = document.createElement('input');
-                input.type = 'checkbox';
-                input.className = 'custom-control-input';
-                input.id = 'niveau-' + id;
-                input.checked = checked;
-                input.addEventListener('change', onChange);
-                const lbl = document.createElement('label');
-                lbl.className = 'custom-control-label' + (bold ? ' font-weight-bold' : '');
-                lbl.htmlFor = input.id;
-                lbl.textContent = label;
-                div.append(input, lbl);
-                menu.appendChild(div);
-            };
-            const all = selectedIds.length === levels.length;
-            addCheckbox('tous', 'Tous les niveaux', all, e => {
-                // Décocher « Tous » revient au premier niveau seul (il faut au moins un niveau)
-                setSelection(e.target.checked ? levels.map(l => l.id) : [levels[0].id]);
-            }, true);
-            menu.appendChild(Object.assign(document.createElement('div'), { className: 'dropdown-divider' }));
-            for (const level of levels) {
-                addCheckbox(level.id, level.nom, selectedIds.includes(level.id), e => {
-                    const next = e.target.checked
-                        ? levels.map(l => l.id).filter(id => id === level.id || selectedIds.includes(id))
-                        : selectedIds.filter(id => id !== level.id);
-                    if (next.length === 0) { e.target.checked = true; return; } // au moins un niveau
-                    setSelection(next);
-                });
-            }
-            document.getElementById('levelButton').textContent = all
-                ? 'Niveaux : tous'
-                : 'Niveaux : ' + levels.filter(l => selectedIds.includes(l.id)).map(l => l.nom).join(', ');
-        }
-
-        async function setSelection(ids) {
-            selectedIds = ids;
-            saveSelection();
-            renderLevelMenu();
-            try {
-                await buildWordList();
-                getRandomWord();
-            } catch (error) {
-                console.error(error);
-                showMessage('Erreur de chargement.');
-            }
-        }
-
-        // --- Affichage d'un mot ------------------------------------------------------
-
-        function showMessage(text) {
-            document.getElementById('wordDisplay').textContent = text;
-            document.getElementById('levelBadge').textContent = '';
-        }
-
-        function getRandomWord() {
-            if (words.length === 0) { showMessage('Aucun mot trouvé.'); return; }
-            // On ne peut pas exclure plus de mots qu'il n'en existe (évite une boucle infinie)
-            const maxRecent = Math.min(MAX_RECENT, words.length - 1);
-            let entry;
-            do {
-                entry = words[Math.floor(Math.random() * words.length)];
-            } while (recentWords.includes(entry.mot));
-            recentWords.push(entry.mot);
-            while (recentWords.length > maxRecent) recentWords.shift();
-
-            document.getElementById('wordDisplay').textContent = entry.mot;
-            document.getElementById('levelBadge').textContent = entry.niveaux.join(' · ');
-
-            // Simple lien vers la page du mot sur Le Dico Elix (mots composés encodés dans l'URL)
-            const elixLink = document.getElementById('elixLink');
-            elixLink.href = ELIX_BASE_URL + encodeURIComponent(entry.mot);
-            elixLink.setAttribute('aria-label', `Voir « ${entry.mot} » sur Le Dico Elix (nouvel onglet)`);
-        }
-
-        // Espace ou Entrée = nouveau mot (sauf si un bouton, lien ou case a le focus)
-        document.addEventListener('keydown', function(event) {
-            const tag = event.target.tagName;
-            if ((event.key === ' ' || event.key === 'Enter') && !['BUTTON', 'A', 'INPUT', 'LABEL'].includes(tag)) {
-                event.preventDefault();
-                getRandomWord();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Cliquer dans le menu des niveaux ne doit pas le refermer
-            document.getElementById('levelMenu').addEventListener('click', e => e.stopPropagation());
-            try {
-                await loadLevels();
-                await setSelection(initialSelection());
-            } catch (error) {
-                console.error('Erreur lors du chargement des mots :', error);
-                showMessage('Erreur de chargement.');
-            }
-        });
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Entraînement à la Langue des Signes Française : un mot au hasard, et le signe sur Le Dico Elix si besoin.">
+    <meta name="theme-color" content="#2f5bea" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#14161c" media="(prefers-color-scheme: dark)">
+    <title>Mots LSF – s'entraîner à la langue des signes</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤟</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
 </head>
-<body class="bg-light text-dark d-flex justify-content-center align-items-center" style="height: 100vh; padding-top: 70px;">
-    <!-- Menu simple fixé en haut -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-primary fixed-top">
-        <a class="navbar-brand text-white" href="#">Mot LSF</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+<body>
+    <header class="topbar">
+        <a class="brand" href="./"><span aria-hidden="true">🤟</span> Mots LSF</a>
+        <button type="button" class="chip-button" id="levelButton" aria-haspopup="dialog" aria-controls="levelDialog">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+            <span id="levelButtonText">Niveaux</span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-white" href="#" id="levelButton" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Niveaux</a>
-                    <div class="dropdown-menu dropdown-menu-right px-3 py-2" id="levelMenu" aria-labelledby="levelButton" style="min-width: 12rem;"></div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white font-weight-bold" href="index.html">Page principale</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="mentions-legales.html">Mentions légales</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+    </header>
 
-    <div class="text-center">
-        <p id="wordDisplay" class="display-3 mb-1" aria-live="polite">Chargement...</p>
-        <span id="levelBadge" class="badge badge-pill badge-secondary"></span>
-        <div class="d-flex justify-content-center mt-4">
-            <button type="button" onclick="getRandomWord()" class="btn btn-primary btn-lg mr-2">Nouveau mot</button>
-            <a id="elixLink" href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer" class="btn btn-warning btn-lg">Voir sur Le Dico Elix ↗</a>
-        </div>
-    </div>
+    <main class="stage">
+        <section class="card" id="card" aria-label="Mot à signer">
+            <span class="badge" id="levelBadge"></span>
+            <p class="word" id="wordDisplay" aria-live="polite">Chargement…</p>
+            <p class="hint">Signe ce mot, puis vérifie sur Elix si besoin.</p>
+        </section>
 
-    <footer class="fixed-bottom text-center small text-muted py-2 bg-light">
-        Les signes s'ouvrent sur <a href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Le Dico Elix</a>,
-        dictionnaire en LSF édité par l'association <a href="https://www.signesdesens.org/" target="_blank" rel="noopener noreferrer">Signes de Sens</a>.
-        Site indépendant, non affilié à Elix. · <a href="mentions-legales.html">Mentions légales</a>
+        <div class="actions">
+            <a id="elixLink" class="btn btn-secondary" href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">
+                Voir le signe sur Elix <span aria-hidden="true">↗</span>
+            </a>
+            <button type="button" id="nextButton" class="btn btn-primary">
+                Mot suivant <span aria-hidden="true">→</span>
+            </button>
+        </div>
+        <p class="kbd-hint"><kbd>Espace</kbd> ou <kbd>Entrée</kbd> : mot suivant · <kbd>E</kbd> : ouvrir Elix</p>
+    </main>
+
+    <footer class="footer">
+        Signes consultables sur <a href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Le Dico Elix</a>
+        (association <a href="https://www.signesdesens.org/" target="_blank" rel="noopener noreferrer">Signes de Sens</a>).
+        Site indépendant, non affilié. · <a href="mentions-legales.html">Mentions légales</a>
     </footer>
 
-    <!-- Script Bootstrap -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <dialog id="levelDialog" class="sheet" aria-labelledby="levelDialogTitle">
+        <form method="dialog">
+            <div class="sheet-header">
+                <h2 id="levelDialogTitle">Niveaux</h2>
+                <button type="submit" class="icon-button" aria-label="Fermer">✕</button>
+            </div>
+            <p class="sheet-text">Choisis les niveaux à mélanger (au moins un).</p>
+            <div class="level-list" id="levelMenu"></div>
+            <button type="submit" class="btn btn-primary btn-block">C'est parti</button>
+        </form>
+    </dialog>
 </body>
 </html>
