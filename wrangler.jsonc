@@ -4,5 +4,7 @@
   "compatibility_date": "2025-09-01",
   "assets": {
     "directory": "."
-  }
+  },
+  // Requis par `wrangler preview` (previews des PR) ; vide = mêmes réglages que la prod
+  "previews": {}
 }
