@@ -69,7 +69,6 @@ Comprendre
 Ne pas comprendre
 Répéter
 Regarder
-Acheter
 Qui
 Maman
 Papa
@@ -115,16 +114,13 @@ Marron
 Noir
 Gris
 Blond
-Rouge
 Doré
 Vert
-Rouge
 Orange
 Beige
 Blanc
 Rose
 Violet
-Gris
 Claire
 Foncé
 S'habiller
@@ -141,17 +137,12 @@ Casquette
 Cravate
 Chaussettes
 Chaussures
-Bottes
 Manteau
 Écharpe
 Gants
 Bonnet
 D'accord
-Long
 Court
-Fin
-Épais
-Bouclé
 Flasque
 Un
 Deux
@@ -196,7 +187,6 @@ Cent dix
 Mille cent quarante-cinq
 être d’accord
 ne pas être d’accord
-fini
 pas fini
 savoir
 ne pas savoir
@@ -212,23 +202,8 @@ aimer
 ne pas aimer
 croire
 ne pas croire
-Comprendre
-Regarder
-Dormir
-Manger
-Boire
-Se doucher
-Se laver
 Travailler
-Signer
-Parler
 Je suis fatigué
-Apprendre
-Réfléchir
-Jouer
-Acheter
-s'habiller
-se déshabiller
 fêter
 J'aime
 Je n'aime pas
