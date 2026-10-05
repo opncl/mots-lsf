@@ -167,6 +167,76 @@ function getRandomWord() {
     elixLink.setAttribute('aria-label', `Voir le signe de « ${entry.mot} » sur Le Dico Elix (nouvel onglet)`);
 }
 
+// --- Plein écran (avec repli « immersif » en CSS) -------------------------------
+// API standard + préfixes webkit (iPadOS Safari). Sans API (iPhone) ou si la demande
+// échoue, la classe .immersive suffit : barre du haut et pied de page masqués, mot agrandi.
+
+const root = document.documentElement;
+let keepImmersive = false;    // Sortie volontaire du plein écran réel en gardant le mode immersif
+
+function fullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function isImmersive() {
+    return root.classList.contains('immersive');
+}
+
+function updateFullscreenButton() {
+    const on = isImmersive();
+    const button = $('fullscreenButton');
+    const label = on ? 'Quitter le plein écran' : 'Passer en plein écran';
+    button.setAttribute('aria-pressed', String(on));
+    button.setAttribute('aria-label', label);
+    button.title = label;
+}
+
+function setImmersive(on) {
+    root.classList.toggle('immersive', on);
+    updateFullscreenButton();
+}
+
+function exitFullscreen() {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (!exit || !fullscreenElement()) return;
+    // exitFullscreen renvoie une promesse, pas webkitExitFullscreen (anciens Safari)
+    Promise.resolve(exit.call(document)).catch(() => {});
+}
+
+function enterFullscreen() {
+    setImmersive(true); // repli immédiat ; le plein écran réel vient en plus si possible
+    const request = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (!request) return;
+    try {
+        Promise.resolve(request.call(root)).catch(() => {}); // refus : on reste en immersif
+    } catch (e) { /* idem */ }
+}
+
+function toggleFullscreen() {
+    if (!isImmersive()) { enterFullscreen(); return; }
+    if (fullscreenElement()) exitFullscreen(); // l'événement de changement retire la classe
+    else setImmersive(false);
+}
+
+// Sortie par Échap ou par le geste système : on remet le bouton d'aplomb
+function onFullscreenChange() {
+    if (fullscreenElement()) setImmersive(true);
+    else if (keepImmersive) keepImmersive = false;
+    else setImmersive(false);
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+// Sur iPadOS, focaliser un champ (les cases de la fenêtre des niveaux) fait sortir
+// du plein écran : sur écran tactile, on le quitte d'abord en gardant le mode immersif.
+function openLevelDialog() {
+    if (fullscreenElement() && matchMedia('(pointer: coarse)').matches) {
+        keepImmersive = true;
+        exitFullscreen();
+    }
+    $('levelDialog').showModal();
+}
+
 // --- Interactions -----------------------------------------------------------------
 
 document.addEventListener('keydown', event => {
@@ -178,6 +248,10 @@ document.addEventListener('keydown', event => {
         getRandomWord();
     } else if ((event.key === 'e' || event.key === 'E') && !onControl) {
         window.open($('elixLink').href, '_blank', 'noopener');
+    } else if ((event.key === 'f' || event.key === 'F') && tag !== 'INPUT') {
+        toggleFullscreen();
+    } else if (event.key === 'Escape' && isImmersive() && !fullscreenElement()) {
+        setImmersive(false); // en plein écran réel, Échap est géré par le navigateur
     }
 });
 
@@ -199,7 +273,9 @@ function enableSwipe(element) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const dialog = $('levelDialog');
-    $('levelButton').addEventListener('click', () => dialog.showModal());
+    $('levelButton').addEventListener('click', openLevelDialog);
+    $('fullscreenButton').addEventListener('click', toggleFullscreen);
+    updateFullscreenButton();
     // Clic en dehors de la fenêtre = fermer
     dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
     $('nextButton').addEventListener('click', getRandomWord);

@@ -144,6 +144,18 @@ a { color: var(--primary); }
     :root:not([data-theme="light"]) .theme-button .icon-moon { display: none; }
 }
 
+/* Bouton plein écran : même pastille que le thème, zone tactile élargie à --tap */
+.fullscreen-button { position: relative; }
+.fullscreen-button::after {
+    content: "";
+    position: absolute;
+    inset: calc((44px - var(--tap)) / 2);
+    border-radius: 50%;
+}
+.fullscreen-button .icon-exit { display: none; }
+.fullscreen-button[aria-pressed="true"] .icon-enter { display: none; }
+.fullscreen-button[aria-pressed="true"] .icon-exit { display: block; }
+
 /* --- Zone principale --- */
 
 .stage {
@@ -245,6 +257,16 @@ a { color: var(--primary); }
 .btn-secondary { background: var(--accent); color: var(--accent-text); }
 .btn-secondary:hover { background: var(--accent-hover); }
 .btn-block { width: 100%; }
+
+/* Précision sous les boutons : discrète, pas une alerte */
+.elix-note {
+    max-width: 52ch;
+    margin: -4px 0 0;
+    color: var(--muted);
+    font-size: .85rem;
+    line-height: 1.4;
+    text-align: center;
+}
 
 .kbd-hint { margin: 0; color: var(--muted); font-size: .85rem; text-align: center; }
 kbd {
@@ -355,6 +377,33 @@ kbd {
     .card { min-height: 160px; padding: 36px 16px 16px; }
     .hint { display: none; }
     .stage { gap: 12px; }
+}
+
+/* --- Plein écran / mode immersif (classe .immersive sur <html>) ---
+   Barre du haut et pied de page masqués : seuls les boutons Niveaux et
+   plein écran restent, flottants en haut à droite, pour ne jamais être coincé. */
+
+:fullscreen { background: var(--bg); }
+
+.immersive .topbar {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top));
+    right: calc(8px + env(safe-area-inset-right));
+    z-index: 10;
+    width: auto;
+    padding: 0;
+}
+.immersive .brand,
+.immersive #themeButton,
+.immersive .footer { display: none; }
+.immersive .stage { max-width: 1000px; padding-top: 64px; }
+.immersive .card { min-height: clamp(260px, 62vh, 620px); }
+.immersive .word { font-size: clamp(3.2rem, 15vw, 9rem); }
+.immersive .word.word-long { font-size: clamp(2.4rem, 10vw, 6.5rem); }
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .immersive .stage { padding-top: 8px; }
+    .immersive .card { min-height: 200px; }
 }
 
 /* --- Page de texte (mentions légales) --- */
