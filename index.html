@@ -53,8 +53,23 @@
     <footer class="footer">
         Signes consultables sur <a href="https://dico.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Le Dico Elix</a>
         (association <a href="https://www.signesdesens.org/" target="_blank" rel="noopener noreferrer">Signes de Sens</a>).
-        Site indépendant, non affilié. · <a href="mentions-legales.html">Mentions légales</a>
+        · <a href="mentions-legales.html">Mentions légales</a>
     </footer>
+
+    <dialog id="elixDialog" class="sheet" aria-labelledby="elixDialogTitle" aria-describedby="elixDialogText">
+        <form method="dialog">
+            <h2 class="sheet-title" id="elixDialogTitle">Vous allez consulter Le Dico Elix</h2>
+            <div class="sheet-body" id="elixDialogText">
+                <p>Mots LSF est un site indépendant. Il n'est ni édité ni affilié à Elix, ni à l'association Signes de Sens.</p>
+                <p>Les signes, vidéos et définitions proposés par Le Dico Elix appartiennent à leurs auteurs. Mots LSF ne fait que vous y renvoyer, dans un nouvel onglet.</p>
+            </div>
+            <div class="sheet-actions">
+                <button type="submit" id="elixContinue" class="btn btn-primary btn-block" autofocus>Continuer vers Elix</button>
+                <button type="submit" class="btn btn-ghost btn-block">Annuler</button>
+            </div>
+            <p class="sheet-note">Ce message ne s'affichera qu'une fois. Vous le retrouverez dans les mentions légales.</p>
+        </form>
+    </dialog>
 
     <dialog id="levelDialog" class="sheet" aria-labelledby="levelDialogTitle">
         <form method="dialog">

@@ -3,6 +3,7 @@
 const ELIX_BASE_URL = 'https://dico.elix-lsf.fr/dictionnaire/';
 const MAX_RECENT = 50;
 const STORAGE_KEY = 'mots-lsf.niveaux';
+const ELIX_NOTICE_KEY = 'mots-lsf.avis-elix-lu';
 
 let levels = [];              // Niveaux disponibles (depuis niveaux.json)
 let selectedIds = [];         // Niveaux cochés
@@ -237,17 +238,56 @@ function openLevelDialog() {
     $('levelDialog').showModal();
 }
 
+// --- Avis « site indépendant » avant la première ouverture d'Elix -----------------
+// Affiché une seule fois. Sans stockage local (navigation privée), on le réaffiche.
+
+let pendingElixUrl = null;    // Page Elix à ouvrir si on confirme l'avis
+
+function elixNoticeSeen() {
+    try { return localStorage.getItem(ELIX_NOTICE_KEY) === '1'; } catch (e) { return false; }
+}
+
+function markElixNoticeSeen() {
+    try { localStorage.setItem(ELIX_NOTICE_KEY, '1'); } catch (e) { /* navigation privée */ }
+}
+
+// Chemin commun au lien et à la touche E : affiche l'avis si besoin et renvoie true
+// (l'ouverture attend alors la confirmation), sinon renvoie false.
+function showElixNoticeIfNeeded() {
+    if (elixNoticeSeen()) return false;
+    pendingElixUrl = $('elixLink').href;
+    $('elixDialog').showModal();
+    return true;
+}
+
+function openElix() {
+    if (!showElixNoticeIfNeeded()) window.open($('elixLink').href, '_blank', 'noopener');
+}
+
+function onElixLinkClick(event) {
+    // Ctrl/Cmd/Maj + clic (nouvel onglet, fenêtre…) : on laisse faire le navigateur
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (showElixNoticeIfNeeded()) event.preventDefault();
+}
+
+function confirmElixNotice() {
+    markElixNoticeSeen();
+    if (pendingElixUrl) window.open(pendingElixUrl, '_blank', 'noopener');
+    pendingElixUrl = null; // le formulaire ferme ensuite la fenêtre
+}
+
 // --- Interactions -----------------------------------------------------------------
 
 document.addEventListener('keydown', event => {
-    if ($('levelDialog').open || event.ctrlKey || event.metaKey || event.altKey) return;
+    if ($('levelDialog').open || $('elixDialog').open) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     const tag = event.target.tagName;
     const onControl = ['BUTTON', 'A', 'INPUT', 'LABEL'].includes(tag);
     if ((event.key === ' ' || event.key === 'Enter') && !onControl) {
         event.preventDefault();
         getRandomWord();
     } else if ((event.key === 'e' || event.key === 'E') && !onControl) {
-        window.open($('elixLink').href, '_blank', 'noopener');
+        openElix();
     } else if ((event.key === 'f' || event.key === 'F') && tag !== 'INPUT') {
         toggleFullscreen();
     } else if (event.key === 'Escape' && isImmersive() && !fullscreenElement()) {
@@ -276,8 +316,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('levelButton').addEventListener('click', openLevelDialog);
     $('fullscreenButton').addEventListener('click', toggleFullscreen);
     updateFullscreenButton();
+    const elixDialog = $('elixDialog');
     // Clic en dehors de la fenêtre = fermer
     dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+    elixDialog.addEventListener('click', e => { if (e.target === elixDialog) elixDialog.close(); });
+    elixDialog.addEventListener('close', () => { pendingElixUrl = null; });
+    $('elixLink').addEventListener('click', onElixLinkClick);
+    $('elixContinue').addEventListener('click', confirmElixNotice);
     $('nextButton').addEventListener('click', getRandomWord);
     enableSwipe($('card'));
     try {
